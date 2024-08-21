@@ -40,7 +40,7 @@ public class CameraFollow : MonoBehaviour
     }
     void OnInit()
     {
-        player = GameObject.FindGameObjectWithTag("Player");
+        player = BattleSystem.instance.LocalPlayer;
         // Calculate the initial offset
         if (player)
         {

@@ -61,4 +61,8 @@ public class GameplayUI : MonoBehaviour
             BattleSystem.instance.OtherPlayerTurn();
         }
     }
+    public void DisconectClick()
+    {
+        FusionConnection.instance.DissconctPlayer();
+    }
 }

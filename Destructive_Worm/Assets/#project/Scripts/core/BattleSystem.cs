@@ -9,10 +9,9 @@ public class BattleSystem : MonoBehaviour
 {
 
 	public GameObject playerPrefab;
-	public GameObject enemyPrefab;
 
-	public Transform playerBattleStation;
-	public Transform enemyBattleStation;
+	public GameObject LocalPlayer;
+	public Transform[] playerBattleStation;
 
 	Unit playerUnit;
 	Unit enemyUnit;
@@ -45,17 +44,17 @@ public class BattleSystem : MonoBehaviour
 
 	IEnumerator SetupBattle()
 	{
-		GameObject playerGO = Instantiate(playerPrefab, playerBattleStation);
+		GameObject playerGO = FusionConnection.instance.CreatePlayerOnGameScene();
 		playerUnit = playerGO.GetComponent<Unit>();
 		playerHUD = playerGO.GetComponentInChildren<BattleHUD>();
 
-		GameObject enemyGO = Instantiate(enemyPrefab, enemyBattleStation);
-		enemyUnit = enemyGO.GetComponent<Unit>();
-		enemyHUD = enemyGO.GetComponentInChildren<BattleHUD>();
+		//GameObject enemyGO = Instantiate(enemyPrefab, enemyBattleStation);
+		//enemyUnit = enemyGO.GetComponent<Unit>();
+		//enemyHUD = enemyGO.GetComponentInChildren<BattleHUD>();
 		//dialogueText.text = "A wild " + enemyUnit.unitName + " approaches...";
 
 		playerHUD.SetHUD(playerUnit);
-		enemyHUD.SetHUD(enemyUnit);
+	//	enemyHUD.SetHUD(enemyUnit);
 
 		yield return new WaitForSeconds(2f);
 
@@ -69,21 +68,20 @@ public class BattleSystem : MonoBehaviour
 	}
 	IEnumerator PlayerAttack()
 	{
-		bool isDead = enemyUnit.TakeDamage(playerUnit.damage);
+		//bool isDead = enemyUnit.TakeDamage(playerUnit.damage);
 
-		enemyHUD.SetHP(enemyUnit.currentHP);
-		//dialogueText.text = "The attack is successful!";
+		//enemyHUD.SetHP(enemyUnit.currentHP);
 
 		yield return new WaitForSeconds(2f);
 
-		if(isDead)
-		{
-			state = BattleState.WON;
-			EndBattle();
-		} else
-		{
-		//	OtherPlayerTurn();
-		}
+		//if(isDead)
+		//{
+		//	state = BattleState.WON;
+		//	EndBattle();
+		//} else
+		//{
+		////	OtherPlayerTurn();
+		//}
 	}
 	public void OtherPlayerTurn()
     {

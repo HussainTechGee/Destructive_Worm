@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
-
-public class PlayerController : MonoBehaviour
+using Fusion;
+public class PlayerController : NetworkBehaviour
 {
     public float moveSpeed = 5f;
     public float jumpForce = 5f;
@@ -22,8 +22,13 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
     }
 
-    void Update()
+    public override void FixedUpdateNetwork()
     {
+        
+        if(!HasInputAuthority)
+        {
+            return;
+        }
         if(!isPlayer)
         {
             return;
