@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-
+using Fusion;
 public enum BattleState { START, PLAYERTURN, ENEMYTURN, WON, LOST }
 
 public class BattleSystem : MonoBehaviour
@@ -44,8 +44,12 @@ public class BattleSystem : MonoBehaviour
 
 	IEnumerator SetupBattle()
 	{
+		yield return new WaitForSeconds(1f);
 		GameObject playerGO = FusionConnection.instance.CreatePlayerOnGameScene();
 		playerUnit = playerGO.GetComponent<Unit>();
+
+		playerUnit.currentHP = GameManager.instance.playerHP;
+		playerUnit.unitName = GameManager.instance.PlayerName;
 		playerHUD = playerGO.GetComponentInChildren<BattleHUD>();
 
 		//GameObject enemyGO = Instantiate(enemyPrefab, enemyBattleStation);
@@ -53,7 +57,7 @@ public class BattleSystem : MonoBehaviour
 		//enemyHUD = enemyGO.GetComponentInChildren<BattleHUD>();
 		//dialogueText.text = "A wild " + enemyUnit.unitName + " approaches...";
 
-		playerHUD.SetHUD(playerUnit);
+	//	playerHUD.SetHUD(playerUnit);
 	//	enemyHUD.SetHUD(enemyUnit);
 
 		yield return new WaitForSeconds(2f);

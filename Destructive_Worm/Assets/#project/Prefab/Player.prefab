@@ -627,7 +627,7 @@ MonoBehaviour:
   m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SyncScale: 0
+  SyncScale: 1
   SyncParent: 0
   _autoAOIOverride: 1
   DisableSharedModeInterpolation: 0
@@ -820,11 +820,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00817f52963ab2e4a87a5633e2d0321e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  unitName: Super Rock
+  _unitName: Default
   unitLevel: 1
   damage: 10
   maxHP: 100
-  currentHP: 90
+  _currentHP: 100
+  playerHuDScript: {fileID: 5011191957444984936}
 --- !u!114 &3500524067964902652
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -843,6 +844,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 2171678390869943597}
+  - {fileID: 7565133022249313966}
   - {fileID: 4587586427762572415}
   - {fileID: 1064721179802117818}
 --- !u!114 &4587586427762572415
@@ -1233,7 +1235,7 @@ MonoBehaviour:
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 0
-  m_FillAmount: 0.69
+  m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
@@ -1358,3 +1360,4 @@ MonoBehaviour:
   levelText: {fileID: 2686399496951066252}
   HpText: {fileID: 203213794256468094}
   hpSlider: {fileID: 3511182067398908568}
+  unitScript: {fileID: 7565133022249313966}

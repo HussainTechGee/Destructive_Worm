@@ -26,7 +26,14 @@ public class LobbyUI : MonoBehaviour
     }
     public void OpenWaitingPanel()
     {
-       // if(FusionConnection.instance.my)
+        if(FusionConnection.instance.isMasterClient())
+        {
+            waitingStartBtn.interactable = true;
+        }
+        else
+        {
+            waitingStartBtn.interactable = false;
+        }
         WaitingPanel.SetActive(true);
         LoadingPanel.SetActive(false);
         LobbyPanel.SetActive(false);
@@ -68,6 +75,6 @@ public class LobbyUI : MonoBehaviour
   
     public void GoToGameScene()
     {
-        GameManager.instance.GoToScene(2);
+        FusionConnection.instance.StartGameScene();
     }
 }

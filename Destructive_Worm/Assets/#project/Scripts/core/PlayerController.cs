@@ -12,10 +12,11 @@ public class PlayerController : NetworkBehaviour
     public float gravity = 9.8f;
     public float maxSpeed = 10.0f;
     public Transform gunTransform;
-    public ShooterFinal ShooterScript;
+   // public ShooterFinal ShooterScript;
     private Rigidbody2D rb;
     private bool isGrounded;
     public bool isPlayer;
+    public int PlayerId;
 
     void Start()
     {
@@ -45,7 +46,14 @@ public class PlayerController : NetworkBehaviour
             Fire();
         }
     }
-
+    public override void Spawned()
+    {
+        if (Object.HasInputAuthority)
+        {
+            // Set the PlayerID to the local player's ID
+            PlayerId= Runner.LocalPlayer.PlayerId;
+        }
+    }
     void Move()
     {
         float moveInput = Input.GetAxis("Horizontal");
@@ -85,10 +93,16 @@ public class PlayerController : NetworkBehaviour
         Vector2 direction = (mousePosition - bulletSpawnPoint.position);
         Vector2 directionNormalize = direction.normalized;
 
-        GameObject bullet = Instantiate(bulletPrefab, bulletSpawnPoint.position, Quaternion.identity);
-        bullet.name=transform.name+"Bullet";
-        Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
-        bulletRb.velocity = directionNormalize * bulletSpeed;
+        Runner.Spawn(bulletPrefab, bulletSpawnPoint.position, Quaternion.identity, Object.InputAuthority,
+          (Runner, O) =>
+          {
+              O.GetComponent<BulletScript>().Init(mousePosition,PlayerId);
+          }
+       );
+
+       // bullet.name=transform.name+"Bullet";
+        //Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
+        //bulletRb.velocity = directionNormalize * bulletSpeed;
         BattleSystem.instance.OtherPlayerTurn();
     }
 
@@ -103,7 +117,7 @@ public class PlayerController : NetworkBehaviour
         if(collision.gameObject.CompareTag("Bullet") )
         {
             Debug.Log(collision.gameObject.name + " : " + transform.name + "Bullet");
-            if(!collision.gameObject.name.Equals(transform.name + "Bullet"))
+            if(!HasInputAuthority)
             {
                 Debug.Log("OtherPlayer Hit");
                 BattleSystem.instance.PlayerBulletHit();

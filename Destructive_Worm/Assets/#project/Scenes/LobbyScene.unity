@@ -1639,6 +1639,7 @@ MonoBehaviour:
   WaitingPanel: {fileID: 1112344696}
   LoadingPanel: {fileID: 1973089439}
   SessionEnteryPrefab: {fileID: 8823068296472761142, guid: 7ac9277b0c0dd2a48a7cb95398c3f7d4, type: 3}
+  waitingStartBtn: {fileID: 1055284096}
   SessionEntryParentContent: {fileID: 673431350}
   WaitingPanelPlayerNameTxt: {fileID: 327724671}
   WaitingPanelMasterText: {fileID: 900554587}
@@ -2503,6 +2504,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   runnerIstance: {fileID: 0}
+  LocalPlayer: {fileID: 0}
 --- !u!1 &1720731306
 GameObject:
   m_ObjectHideFlags: 0

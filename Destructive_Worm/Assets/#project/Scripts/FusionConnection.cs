@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class FusionConnection : FusionMonoBehaviour, INetworkRunnerCallbacks
 {
@@ -11,7 +12,8 @@ public class FusionConnection : FusionMonoBehaviour, INetworkRunnerCallbacks
     public static FusionConnection instance;
     public NetworkObject LocalPlayer;
     public Dictionary<string, GameObject> sessionListUiDictionary = new Dictionary<string, GameObject>();
-    PlayerRef myPlayer;
+    [HideInInspector]
+    public PlayerRef myPlayer;
     void Awake()
     {
         if(instance==null)
@@ -58,14 +60,24 @@ public class FusionConnection : FusionMonoBehaviour, INetworkRunnerCallbacks
 
         });
     }
+    public void StartGameScene()
+    {
+        if(runnerIstance.IsSceneAuthority)
+        {
+            Debug.Log("Master!");
+            runnerIstance.SessionInfo.IsOpen = false;
+            runnerIstance.LoadScene(SceneRef.FromIndex(2));
+        }
+        else
+        {
+            Debug.Log("Not Master!");
+        }
+        
+    }
     public bool isMasterClient()
     {
-        bool isMaster=false;
-        if(myPlayer.PlayerId==1)
-        {
-            isMaster = true;
-        }
-        return isMaster;
+        
+        return runnerIstance.IsSharedModeMasterClient;
            
     }
     public void JoinSession(string name)
@@ -81,8 +93,10 @@ public class FusionConnection : FusionMonoBehaviour, INetworkRunnerCallbacks
     public GameObject CreatePlayerOnGameScene()
     {
         LocalPlayer = runnerIstance.Spawn(BattleSystem.instance.playerPrefab, BattleSystem.instance.playerBattleStation[((myPlayer.PlayerId-1) % BattleSystem.instance.playerBattleStation.Length)].position, Quaternion.identity, myPlayer);
+        
         return LocalPlayer.gameObject;
     }
+    
     public void DissconctPlayer()
     {
        // runnerIstance.Despawn(runnerIstance.GetPlayerObject(runnerIstance.LocalPlayer));

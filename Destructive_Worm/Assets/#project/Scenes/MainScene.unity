@@ -665,6 +665,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   PlayerName: 
+  playerHP: 70
 --- !u!4 &335920286
 Transform:
   m_ObjectHideFlags: 0

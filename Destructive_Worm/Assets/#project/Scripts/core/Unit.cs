@@ -1,26 +1,46 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Fusion;
 
-public class Unit : MonoBehaviour
+public class Unit : NetworkBehaviour
 {
-
-	public string unitName;
+	[Networked, OnChangedRender(nameof(NameChanged))]
+	public NetworkString<_32> unitName { get; set; }
 	public int unitLevel;
 
 	public float damage;
 
 	public float maxHP;
-	public float currentHP;
+	[Networked, OnChangedRender(nameof(HealthChanged))]
+	public float currentHP { get; set; }=100;
 
-	public bool TakeDamage(float dmg)
+	public BattleHUD playerHuDScript;
+	void HealthChanged()
+    {
+		Debug.Log("Hp Changed!"+currentHP);
+		//playerHuDScript.SetHP(currentHP);
+		//change
+
+
+	}
+	void NameChanged()
 	{
+		Debug.Log("Hp name!"+unitName);
+		//playerHuDScript.SetName(unitName);
+	}
+	[Rpc (RpcSources.All,RpcTargets.StateAuthority)]
+	public void TakeDamageRpc(float dmg)
+	{
+
 		currentHP -= dmg;
 
 		if (currentHP <= 0)
-			return true;
+		{//	return true;
+		}
 		else
-			return false;
+		{   //return false;
+		}
 	}
 
 	public void Heal(int amount)
