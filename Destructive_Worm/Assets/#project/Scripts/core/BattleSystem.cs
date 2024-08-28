@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Fusion;
-public enum BattleState { START, PLAYERTURN, ENEMYTURN, WON, LOST }
+public enum BattleState { START, PLAYERTURN, OTHERTURN	, WON, LOST }
 
 public class BattleSystem : MonoBehaviour
 {
@@ -14,7 +14,6 @@ public class BattleSystem : MonoBehaviour
 	public Transform[] playerBattleStation;
 
 	Unit playerUnit;
-	Unit enemyUnit;
 
 	//public Text dialogueText;
 
@@ -27,7 +26,8 @@ public class BattleSystem : MonoBehaviour
 	public static BattleSystem instance;
 
 	public BattleState state;
-
+	public int currentTurnId;
+	List<playerData> AllPlayers; 
     private void Awake()
     {
         if(instance==null)
@@ -38,6 +38,7 @@ public class BattleSystem : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+		currentTurnId = 1;
 		state = BattleState.START;
 		StartCoroutine(SetupBattle());
     }
@@ -45,60 +46,127 @@ public class BattleSystem : MonoBehaviour
 	IEnumerator SetupBattle()
 	{
 		yield return new WaitForSeconds(1f);
-		GameObject playerGO = FusionConnection.instance.CreatePlayerOnGameScene();
-		playerUnit = playerGO.GetComponent<Unit>();
+		LocalPlayer = FusionConnection.instance.CreatePlayerOnGameScene();
+		playerUnit = LocalPlayer.GetComponent<Unit>();
 
 		playerUnit.currentHP = GameManager.instance.playerHP;
 		playerUnit.unitName = GameManager.instance.PlayerName;
-		playerHUD = playerGO.GetComponentInChildren<BattleHUD>();
 
-		//GameObject enemyGO = Instantiate(enemyPrefab, enemyBattleStation);
-		//enemyUnit = enemyGO.GetComponent<Unit>();
-		//enemyHUD = enemyGO.GetComponentInChildren<BattleHUD>();
-		//dialogueText.text = "A wild " + enemyUnit.unitName + " approaches...";
-
-	//	playerHUD.SetHUD(playerUnit);
-	//	enemyHUD.SetHUD(enemyUnit);
-
-		yield return new WaitForSeconds(2f);
-
-		state = BattleState.PLAYERTURN;
-		isCameraFollow = true;
-		GameplayUI.instance.PlayerTurnOn();
+		yield return new WaitForSeconds(1f);
+		BotCreationCheck();
+		GetAllPlayer();
+		yield return new WaitForSeconds(.5f);
+		TurnSetup();
 	}
-	public void PlayerBulletHit()
+	void BotCreationCheck()
     {
-		StartCoroutine(PlayerAttack());
-	}
-	IEnumerator PlayerAttack()
-	{
-		//bool isDead = enemyUnit.TakeDamage(playerUnit.damage);
-
-		//enemyHUD.SetHP(enemyUnit.currentHP);
-
-		yield return new WaitForSeconds(2f);
-
-		//if(isDead)
-		//{
-		//	state = BattleState.WON;
-		//	EndBattle();
-		//} else
-		//{
-		////	OtherPlayerTurn();
-		//}
-	}
-	public void OtherPlayerTurn()
+		//Only one Player
+		if(FusionConnection.instance.runnerIstance.SessionInfo.PlayerCount==1)
+		{
+			BotManager.instance.initBot();
+        }
+    }
+	void TurnSetup()
     {
-		state = BattleState.ENEMYTURN;
-		StartCoroutine(EnemyTurn());
+		playerData pData = CurrentTurnPlayerData();
+		if(pData==null)
+        {
+			Debug.Log("Something is Wrong!");
+			return;
+        }
+		if (isMyTurn())
+		{
+			state = BattleState.PLAYERTURN;
+			isCameraFollow = true;
+			GameplayUI.instance.PlayerTurnOn(pData.pName);
+		}
+		else
+		{
+			//Bot Turn
+			if(pData.isBot)
+            {
+				BotManager.instance.BotTurn(AllPlayers[0].pObject);
+            }
+			//Other Player Turn
+			else
+            {
+				state = BattleState.OTHERTURN;
+				isCameraFollow = false;
+				GameplayUI.instance.OtherTurnOn(pData.pName);
+			}
+			
+		}
 	}
-	IEnumerator EnemyTurn()
+	bool isMyTurn()
     {
-		yield return new WaitForSeconds(2f);
-		GameplayUI.instance.OtherTurnOn();
-		isCameraFollow = false;
-	}
+		if(currentTurnId==LocalPlayer.GetComponent<PlayerController>().PlayerId)
+        {
+			return true;
+        }
+		else
+        {
+			return false;
+        }
+    }
 
+	public void NextTurn()
+    {
+		for(int i=0;i<AllPlayers.Count;i++)
+        {
+			if(AllPlayers[i].playerId==currentTurnId)
+            {
+				if(i<AllPlayers.Count-1)
+                {
+					currentTurnId = AllPlayers[(i + 1)].playerId;
+					Debug.Log("NextIndex !");
+                }
+				else
+                {
+					Debug.Log("First Index !");
+					currentTurnId = AllPlayers[0].playerId;
+                }
+				break;
+            }
+        }
+		TurnSetup();
+    }
+	playerData CurrentTurnPlayerData()
+    {
+		foreach(playerData pData in AllPlayers)
+        {
+			if(currentTurnId==pData.playerId)
+            {
+				return pData;
+            }
+        }
+		return null;
+    }
+	void GetAllPlayer()
+    {
+		AllPlayers = new List<playerData>();
+		GameObject[] pObjList = GameObject.FindGameObjectsWithTag("Player");
+		GameObject[] bObjList = GameObject.FindGameObjectsWithTag("Bot");
+		Debug.Log("GetAllPlayer Called");
+		for(int i=0;i<pObjList.Length;i++)
+        {
+			Debug.Log("GetAllPlayer Loop");
+			playerData pData = new playerData();
+			pData.pObject = pObjList[i];
+			pData.isBot = false;
+			pData.playerId = pObjList[i].GetComponent<PlayerController>().PlayerId;
+			pData.pName= pObjList[i].GetComponent<Unit>().unitName.ToString();
+			AllPlayers.Add(pData);
+		}
+		for (int i = 0; i < bObjList.Length; i++)
+		{
+			playerData pData = new playerData();
+			pData.pObject = bObjList[i];
+			pData.isBot = true;
+			pData.playerId = bObjList[i].GetComponent<BotController>().PlayerId;
+			AllPlayers.Add(pData);
+		}
+	}
+	
 	void EndBattle()
 	{
 		if(state == BattleState.WON)
@@ -127,8 +195,16 @@ public class BattleSystem : MonoBehaviour
 	public void SkipEnemyTurn()
 	{
 		state = BattleState.PLAYERTURN;
-		GameplayUI.instance.PlayerTurnOn();
+		GameplayUI.instance.PlayerTurnOn(CurrentTurnPlayerData().pName);
 		isCameraFollow = true;
 	}
 
+	[System.Serializable]
+	public class playerData
+    {
+		public GameObject pObject;
+		public int playerId;
+		public bool isBot;
+		public string pName;
+    }
 }

@@ -647,9 +647,10 @@ GameObject:
   - component: {fileID: 7565133022249313966}
   - component: {fileID: 3500524067964902652}
   - component: {fileID: 4587586427762572415}
+  - component: {fileID: 4117128314682520461}
   m_Layer: 6
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -806,8 +807,8 @@ MonoBehaviour:
   gravity: 9.8
   maxSpeed: 10
   gunTransform: {fileID: 7980305151328730159}
-  ShooterScript: {fileID: 0}
   isPlayer: 1
+  PlayerId: 0
 --- !u!114 &7565133022249313966
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -820,7 +821,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00817f52963ab2e4a87a5633e2d0321e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _unitName: Default
+  _unitName:
+    _length: 0
+    _data:
+      Data: 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
   unitLevel: 1
   damage: 10
   maxHP: 100
@@ -863,6 +867,41 @@ MonoBehaviour:
   SyncParent: 0
   _autoAOIOverride: 1
   DisableSharedModeInterpolation: 0
+--- !u!70 &4117128314682520461
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7018855928330355547}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 1.8}
+  m_Size: {x: 9.989431, y: 13.990383}
+  m_Direction: 0
 --- !u!1 &7056992494510768332
 GameObject:
   m_ObjectHideFlags: 0

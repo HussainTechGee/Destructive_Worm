@@ -29,8 +29,8 @@ public class Unit : NetworkBehaviour
 		Debug.Log("Hp name!"+unitName);
 		//playerHuDScript.SetName(unitName);
 	}
-	[Rpc (RpcSources.All,RpcTargets.StateAuthority)]
-	public void TakeDamageRpc(float dmg)
+	[Rpc (RpcSources.InputAuthority,RpcTargets.All)]
+	public void RPC_TakeDamage(float dmg)
 	{
 
 		currentHP -= dmg;
@@ -43,6 +43,18 @@ public class Unit : NetworkBehaviour
 		}
 	}
 
+	public void TakeDamage(float dmg)
+	{
+
+		currentHP -= dmg;
+
+		if (currentHP <= 0)
+		{//	return true;
+		}
+		else
+		{   //return false;
+		}
+	}
 	public void Heal(int amount)
 	{
 		currentHP += amount;

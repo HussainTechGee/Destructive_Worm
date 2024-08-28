@@ -5,7 +5,7 @@ using TMPro;
 public class GameplayUI : MonoBehaviour
 {
     public GameObject GameplayPlayerTurn, GameplayOtherTurn;
-    public TMP_Text PlayerTurnTimerTxt, OtherTurnTimerText;
+    public TMP_Text PlayerTurnTimerTxt, OtherTurnTimerText,playerTurnNameText,OtherTurnNameText;
     public int AttackTime;
 
     Coroutine _TimerCoroutine;
@@ -18,8 +18,9 @@ public class GameplayUI : MonoBehaviour
             instance = this;
         }
     }
-    public void PlayerTurnOn()
+    public void PlayerTurnOn(string pName)
     {
+       // playerTurnNameText.text = pName +" Turn!";
         GameplayPlayerTurn.SetActive(true);
         GameplayOtherTurn.SetActive(false);
         if(_TimerCoroutine!=null)
@@ -28,8 +29,9 @@ public class GameplayUI : MonoBehaviour
         }
         _TimerCoroutine=StartCoroutine(TimerCoroutine(true));
     }
-    public void OtherTurnOn()
+    public void OtherTurnOn(string pName)
     {
+        OtherTurnNameText.text = pName+" Turn!";
         GameplayPlayerTurn.SetActive(false);
         GameplayOtherTurn.SetActive(true);
         if (_TimerCoroutine != null)
@@ -58,7 +60,7 @@ public class GameplayUI : MonoBehaviour
         }
         if (totalTime < 0 && isPlayer)
         {
-            BattleSystem.instance.OtherPlayerTurn();
+            BattleSystem.instance.NextTurn();
         }
     }
     public void DisconectClick()
