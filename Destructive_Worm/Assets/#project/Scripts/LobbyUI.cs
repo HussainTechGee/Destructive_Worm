@@ -8,7 +8,7 @@ public class LobbyUI : MonoBehaviour
     public GameObject SessionEnteryPrefab;
     public Button waitingStartBtn;
     public Transform SessionEntryParentContent;
-    public TMP_Text WaitingPanelPlayerNameTxt, WaitingPanelMasterText;
+    public TMP_Text WaitingPanelPlayerNameTxt, WaitingPanelMasterText, WaitingPanelCountText,CountdownText;
     public static LobbyUI instance;
     private void Awake()
     {
@@ -50,18 +50,23 @@ public class LobbyUI : MonoBehaviour
         entryObj.transform.parent = SessionEntryParentContent;
         return entryObj;
     }
-    public void WaitingPanelUpdate(int playerIndex)
+    public void WaitingPanelUpdate(bool isMaster)
     {
         WaitingPanelPlayerNameTxt.text = GameManager.instance.PlayerName;
-        if(playerIndex==1)
+        if(isMaster)
         {
             WaitingPanelMasterText.text = "Yes";
+
         }
         else
         {
             WaitingPanelMasterText.text = "No";
         }
        
+    }
+    public void WaitingPanelPlayerEnter(string countString)
+    {
+        WaitingPanelCountText.text = countString;
     }
     public void DissconectBtnClick()
     {

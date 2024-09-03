@@ -5,7 +5,7 @@ using TMPro;
 public class GameplayUI : MonoBehaviour
 {
     public GameObject GameplayPlayerTurn, GameplayOtherTurn;
-    public TMP_Text PlayerTurnTimerTxt, OtherTurnTimerText,playerTurnNameText,OtherTurnNameText;
+    public TMP_Text PlayerTurnTimerTxt, PlayerTurnIdTxt, OtherTurnTimerText, OtherTurnIdText, playerTurnNameText,OtherTurnNameText;
     public int AttackTime;
 
     Coroutine _TimerCoroutine;
@@ -18,22 +18,24 @@ public class GameplayUI : MonoBehaviour
             instance = this;
         }
     }
-    public void PlayerTurnOn(string pName)
+    public void PlayerTurnOn(string pName, int id)
     {
        // playerTurnNameText.text = pName +" Turn!";
         GameplayPlayerTurn.SetActive(true);
         GameplayOtherTurn.SetActive(false);
+        PlayerTurnIdTxt.text = id.ToString();
         if(_TimerCoroutine!=null)
         {
             StopCoroutine(_TimerCoroutine);
         }
         _TimerCoroutine=StartCoroutine(TimerCoroutine(true));
     }
-    public void OtherTurnOn(string pName)
+    public void OtherTurnOn(string pName,int id)
     {
         OtherTurnNameText.text = pName+" Turn!";
         GameplayPlayerTurn.SetActive(false);
         GameplayOtherTurn.SetActive(true);
+        OtherTurnIdText.text = id.ToString();
         if (_TimerCoroutine != null)
         {
             StopCoroutine(_TimerCoroutine);
@@ -58,9 +60,10 @@ public class GameplayUI : MonoBehaviour
             yield return new WaitForSeconds(1f);
             totalTime--;
         }
-        if (totalTime < 0 && isPlayer)
+        if (totalTime < 0 && FusionConnection.instance.runnerIstance.IsSharedModeMasterClient)
         {
-            BattleSystem.instance.NextTurn();
+            Debug.Log("Next Turn on Master");
+          //  BattleSystem.instance.LocalPlayer.GetComponent<PlayerController>().RPC_NextTurn();
         }
     }
     public void DisconectClick()

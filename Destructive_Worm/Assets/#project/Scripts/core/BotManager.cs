@@ -2,16 +2,18 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using Fusion;
 using static UnityEngine.GraphicsBuffer;
 
-public class BotManager : MonoBehaviour
+public class BotManager : NetworkBehaviour
 {
     public static BotManager instance;
     public GameObject BotPrefab;
-    public Transform BotPos,targetPlayer;
-    public List<GameObject> botsList = new List<GameObject>();
+    public Transform targetPlayer;
     public int currentbot = 0;
-    GameObject BotObj;
+    private bool isHostClient = false;
+    public string[] FirstNameList;
+    public string[] LastNameList;
     //-----------------
     void Awake()
     {
@@ -21,15 +23,77 @@ public class BotManager : MonoBehaviour
         }
        // StartCoroutine(BotsTurn());
     }
-    public void initBot()
+    public override void Spawned()
     {
-        BotObj = Instantiate(BotPrefab, BotPos.position, Quaternion.identity);
+        // Check if this client is the designated host in Shared Mode
+        if (Runner.IsSharedModeMasterClient)
+        {
+            Debug.Log("Master for Bot");
+            isHostClient = true;
+            SpawnBots();
+        }
+        else
+        {
+            // Disable the script if this is not the host client
+            enabled = false;
+        }
     }
-    public void BotTurn(GameObject target)
+    private void SpawnBots()
+    {
+        int playerCount = Runner.SessionInfo.PlayerCount;
+        int botCount = 4 - playerCount;
+
+        // Spawn the specified number of bots
+        for (int i = 0; i < botCount; i++)
+        {
+            SpawnBot(playerCount+i);
+        }
+    }
+    private void SpawnBot(int index)
+    {
+        if (Object.HasStateAuthority)
+        {
+            // Spawn the bot prefab with network synchronization
+           NetworkObject botObj= Runner.Spawn(BotPrefab, BattleSystem.instance.playerBattleStation[index].position, Quaternion.identity);
+
+            //Bot Name
+            string botName = FirstNameList[Random.Range(0, FirstNameList.Length)] + " " + LastNameList[Random.Range(0, LastNameList.Length)];
+            int botHp = Random.Range(70, 101);
+            botObj.GetComponent<BotController>().PlayerId = index + 1;
+            botObj.GetComponent<Unit>().SetNameAndHp(botName, botHp,index+1);
+        }
+    }
+    public void BotTurn(GameObject botObj,GameObject target)
     {
         targetPlayer = target.transform;
-        BotObj.GetComponent<BotController>().isMyTurn = true;
-        StartCoroutine(botsList[currentbot].GetComponent<BotController>().Move());
+        botObj.GetComponent<BotController>().isMyTurn = true;
+        StartCoroutine(botObj.GetComponent<BotController>().Move());
+    }
+    public void OnPlayerLeft(PlayerRef player)
+    {
+        // Handle reassignment of bot control when the host client disconnects
+        if (player == Object.StateAuthority)
+        {
+            AssignNewBotHost();
+        }
+    }
+    private void AssignNewBotHost()
+    {
+        // Loop through all active players to find a new host
+        foreach (PlayerRef player in Runner.ActivePlayers)
+        {
+            // Skip the current disconnected player and any invalid players
+            if (player != Object.StateAuthority && player.IsRealPlayer)
+            {
+                // Reassign state authority to the first valid player found
+                Object.AssignInputAuthority(player);
+                Debug.Log($"New bot host assigned: {player}");
+                return; // Exit once a new host is found
+            }
+        }
+
+        // If no suitable player is found, log a warning
+        Debug.LogWarning("No available player to reassign bot authority!");
     }
     //
     //IEnumerator BotsTurn()

@@ -5,6 +5,7 @@ using TMPro;
 public class MainMenuUI : MonoBehaviour
 {
     public TMP_InputField nameInpuit;
+    bool isClicked;
     // Start is called before the first frame update
     void Start()
     {
@@ -22,6 +23,15 @@ public class MainMenuUI : MonoBehaviour
         GameManager.instance.PlayerName= name;
     }
     public void StartBtnClick()
+    {
+        if(!isClicked)
+        {
+            isClicked = true;
+            Invoke("DelayBeforeLoad",.25f);
+        }
+        
+    }
+    void DelayBeforeLoad()
     {
         GameManager.instance.GoToScene(1);
     }

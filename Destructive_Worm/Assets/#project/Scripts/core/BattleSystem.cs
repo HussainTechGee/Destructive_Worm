@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 using UnityEngine.UI;
 using Fusion;
 public enum BattleState { START, PLAYERTURN, OTHERTURN	, WON, LOST }
@@ -12,13 +13,6 @@ public class BattleSystem : MonoBehaviour
 
 	public GameObject LocalPlayer;
 	public Transform[] playerBattleStation;
-
-	Unit playerUnit;
-
-	//public Text dialogueText;
-
-	 BattleHUD playerHUD;
-	 BattleHUD enemyHUD;
 
 	[HideInInspector]
 	public bool isCameraFollow;
@@ -47,25 +41,12 @@ public class BattleSystem : MonoBehaviour
 	{
 		yield return new WaitForSeconds(1f);
 		LocalPlayer = FusionConnection.instance.CreatePlayerOnGameScene();
-		playerUnit = LocalPlayer.GetComponent<Unit>();
-
-		playerUnit.currentHP = GameManager.instance.playerHP;
-		playerUnit.unitName = GameManager.instance.PlayerName;
-
+		LocalPlayer.GetComponent<Unit>().SetNameAndHp(GameManager.instance.PlayerName,GameManager.instance.playerHP, LocalPlayer.GetComponent<PlayerController>().PlayerId);
 		yield return new WaitForSeconds(1f);
-		BotCreationCheck();
 		GetAllPlayer();
 		yield return new WaitForSeconds(.5f);
 		TurnSetup();
 	}
-	void BotCreationCheck()
-    {
-		//Only one Player
-		if(FusionConnection.instance.runnerIstance.SessionInfo.PlayerCount==1)
-		{
-			BotManager.instance.initBot();
-        }
-    }
 	void TurnSetup()
     {
 		playerData pData = CurrentTurnPlayerData();
@@ -78,23 +59,22 @@ public class BattleSystem : MonoBehaviour
 		{
 			state = BattleState.PLAYERTURN;
 			isCameraFollow = true;
-			GameplayUI.instance.PlayerTurnOn(pData.pName);
+			pData.pObject.GetComponent<PlayerController>().isFired = false;
+			GameplayUI.instance.PlayerTurnOn(pData.pName,pData.playerId);
 		}
 		else
 		{
 			//Bot Turn
 			if(pData.isBot)
             {
-				BotManager.instance.BotTurn(AllPlayers[0].pObject);
+				BotManager.instance.BotTurn(pData.pObject,AllPlayers[GetRandomExcluding()].pObject);
             }
 			//Other Player Turn
-			else
-            {
-				state = BattleState.OTHERTURN;
-				isCameraFollow = false;
-				GameplayUI.instance.OtherTurnOn(pData.pName);
-			}
-			
+			state = BattleState.OTHERTURN;
+			isCameraFollow = false;
+			GameplayUI.instance.OtherTurnOn(pData.pName,pData.playerId);
+
+
 		}
 	}
 	bool isMyTurn()
@@ -109,27 +89,33 @@ public class BattleSystem : MonoBehaviour
         }
     }
 
-	public void NextTurn()
+	public void NextTurn(float delay)
     {
-		for(int i=0;i<AllPlayers.Count;i++)
-        {
-			if(AllPlayers[i].playerId==currentTurnId)
-            {
-				if(i<AllPlayers.Count-1)
-                {
+		StartCoroutine(NextTurnCoroutine(delay));
+    }
+	IEnumerator NextTurnCoroutine(float delay)
+    {
+		yield return new WaitForSeconds(delay);
+		for (int i = 0; i < AllPlayers.Count; i++)
+		{
+			if (AllPlayers[i].playerId == currentTurnId)
+			{
+				if (i < AllPlayers.Count - 1)
+				{
 					currentTurnId = AllPlayers[(i + 1)].playerId;
 					Debug.Log("NextIndex !");
-                }
+				}
 				else
-                {
+				{
 					Debug.Log("First Index !");
 					currentTurnId = AllPlayers[0].playerId;
-                }
+				}
 				break;
-            }
-        }
+			}
+		}
 		TurnSetup();
-    }
+
+	}
 	playerData CurrentTurnPlayerData()
     {
 		foreach(playerData pData in AllPlayers)
@@ -141,32 +127,60 @@ public class BattleSystem : MonoBehaviour
         }
 		return null;
     }
+	int CurrentTurnPlayerIndex()
+	{
+		for (int i=0;i<AllPlayers.Count;i++)
+		{
+			if (currentTurnId ==AllPlayers[i].playerId)
+			{
+				return i;
+			}
+		}
+		return 0;
+	}
 	void GetAllPlayer()
     {
 		AllPlayers = new List<playerData>();
-		GameObject[] pObjList = GameObject.FindGameObjectsWithTag("Player");
-		GameObject[] bObjList = GameObject.FindGameObjectsWithTag("Bot");
+		PlayerController[] pObjList = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+		BotController[] bObjList = FindObjectsByType<BotController>(FindObjectsSortMode.None);
 		Debug.Log("GetAllPlayer Called");
 		for(int i=0;i<pObjList.Length;i++)
         {
+			PlayerController pObj = Array.Find(pObjList, item => item.PlayerId == (i+1));
 			Debug.Log("GetAllPlayer Loop");
 			playerData pData = new playerData();
-			pData.pObject = pObjList[i];
+			pData.pObject = pObj.gameObject;
 			pData.isBot = false;
-			pData.playerId = pObjList[i].GetComponent<PlayerController>().PlayerId;
-			pData.pName= pObjList[i].GetComponent<Unit>().unitName.ToString();
+			pData.playerId = pObj.PlayerId;
+			pData.pName= pObj.GetComponent<Unit>().unitName.ToString();
 			AllPlayers.Add(pData);
 		}
-		for (int i = 0; i < bObjList.Length; i++)
+		int index = pObjList.Length;
+		for (int i = 1; i <= bObjList.Length; i++)
 		{
+			BotController bObj = Array.Find(bObjList, item => item.PlayerId == (index + i));
 			playerData pData = new playerData();
-			pData.pObject = bObjList[i];
+			pData.pObject = bObj.gameObject;
 			pData.isBot = true;
-			pData.playerId = bObjList[i].GetComponent<BotController>().PlayerId;
+			pData.playerId = bObj.PlayerId;
+			pData.pName = bObj.GetComponent<Unit>().unitName.ToString();
 			AllPlayers.Add(pData);
 		}
 	}
-	
+	int GetRandomExcluding()
+	{
+		
+		int randomValue = UnityEngine.Random.Range(0, AllPlayers.Count);  // Generate a random number in the range [min, max)
+		int currentPlayerIndex = CurrentTurnPlayerIndex();
+		// If the random value is the excluded value, regenerate it
+		if (randomValue == currentPlayerIndex)
+		{
+			// If randomValue is equal to excludedValue, we need to choose from one less value
+			randomValue = (randomValue == 0) ? randomValue + 1 : randomValue - 1;
+		}
+
+		return randomValue;
+	}
 	void EndBattle()
 	{
 		if(state == BattleState.WON)
@@ -195,7 +209,7 @@ public class BattleSystem : MonoBehaviour
 	public void SkipEnemyTurn()
 	{
 		state = BattleState.PLAYERTURN;
-		GameplayUI.instance.PlayerTurnOn(CurrentTurnPlayerData().pName);
+		GameplayUI.instance.PlayerTurnOn(CurrentTurnPlayerData().pName,CurrentTurnPlayerData().playerId);
 		isCameraFollow = true;
 	}
 

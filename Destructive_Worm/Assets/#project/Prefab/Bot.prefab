@@ -661,6 +661,8 @@ GameObject:
   - component: {fileID: 9212950664626296286}
   - component: {fileID: 6847592123697376377}
   - component: {fileID: 4346263391020250915}
+  - component: {fileID: 2909171403826307721}
+  - component: {fileID: 7217722979707504876}
   m_Layer: 6
   m_Name: Bot
   m_TagString: Bot
@@ -815,7 +817,7 @@ MonoBehaviour:
   jumpForce: 5
   bulletSpawnPoint: {fileID: 6472119918687522541}
   directionOfFire: {fileID: 3009836043009241135}
-  bulletPrefab: {fileID: 5617740518706445040, guid: b5b236ed8f9d6974dab4c5b2679af122, type: 3}
+  bulletPrefab: {fileID: 5617740518706445040, guid: 9edc982ae585a244f8b1be3c7cbaebcf, type: 3}
   bulletSpeed: 15
   gravity: 9.8
   gunTransform: {fileID: 7980305151328730159}
@@ -823,6 +825,7 @@ MonoBehaviour:
   isMyTurn: 0
   canMove: 0
   accuracyLevel: 0
+  _PlayerId: 0
 --- !u!70 &6847592123697376377
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -879,6 +882,42 @@ MonoBehaviour:
   maxHP: 80
   _currentHP: 100
   playerHuDScript: {fileID: 5011191957444984936}
+--- !u!114 &2909171403826307721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7018855928330355547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 2355907157
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 9212950664626296286}
+  - {fileID: 4346263391020250915}
+  - {fileID: 7217722979707504876}
+--- !u!114 &7217722979707504876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7018855928330355547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SyncScale: 0
+  SyncParent: 0
+  _autoAOIOverride: 1
+  DisableSharedModeInterpolation: 0
 --- !u!1 &7056992494510768332
 GameObject:
   m_ObjectHideFlags: 0
@@ -1367,7 +1406,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9063785774420493281}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f490f2663c5b76142b438c9cade17f83, type: 3}
   m_Name: 

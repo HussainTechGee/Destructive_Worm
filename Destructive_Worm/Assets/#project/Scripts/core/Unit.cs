@@ -7,7 +7,9 @@ public class Unit : NetworkBehaviour
 {
 	[Networked, OnChangedRender(nameof(NameChanged))]
 	public NetworkString<_32> unitName { get; set; }
-	public int unitLevel;
+
+	[Networked, OnChangedRender(nameof(IdChanged))]
+	public int unitLevel { get; set; }
 
 	public float damage;
 
@@ -24,12 +26,23 @@ public class Unit : NetworkBehaviour
 
 
 	}
+	public void SetNameAndHp(string name,float hp,int id)
+    {
+		unitName = name;
+		currentHP = hp;
+		unitLevel = id;
+    }
 	void NameChanged()
 	{
 		Debug.Log("Hp name!"+unitName);
 		//playerHuDScript.SetName(unitName);
 	}
-	[Rpc (RpcSources.InputAuthority,RpcTargets.All)]
+	void IdChanged()
+	{
+		Debug.Log("Hp name!" + unitName);
+		//playerHuDScript.SetName(unitName);
+	}
+	[Rpc (RpcSources.StateAuthority,RpcTargets.All)]
 	public void RPC_TakeDamage(float dmg)
 	{
 

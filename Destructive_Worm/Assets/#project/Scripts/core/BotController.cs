@@ -2,8 +2,9 @@ using System.Collections;
 using System.ComponentModel;
 using TMPro;
 using UnityEngine;
+using Fusion;
 using static UnityEngine.GraphicsBuffer;
-public class BotController : MonoBehaviour
+public class BotController : NetworkBehaviour
 {
     public float moveSpeed = 5f;
     public float jumpForce = 5f;
@@ -21,12 +22,17 @@ public class BotController : MonoBehaviour
     float deviation;// how much anngle of gun will deviate
   //  int target = 0;// opponet to shoot
     float horizontalDistance, verticalDistance;
-    public int PlayerId { get; set; } = 2;
+    [Networked, OnChangedRender(nameof(IdChanged))]
+    public int PlayerId { get; set; } = 0;
     public enum AccuracyLevel {Beginner, Standard, Pro};
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+    }
+    void IdChanged()
+    {
+        Debug.Log("Id Update");
     }
 
     /* public override void FixedUpdateNetwork()
@@ -94,6 +100,7 @@ public class BotController : MonoBehaviour
     void StopMove()
     {
         canMove = false;
+
     }
 
     void Jump()
@@ -258,18 +265,29 @@ public class BotController : MonoBehaviour
     }*/
     void Fire()
     {
-        /*Vector3 mousePosition = bulletSpawnPoint.position + new Vector3(1,1,0);
-        mousePosition.z = 0;  // Ensure the z position is 0 since it's a 2D game*/
-        Vector2 direction = (directionOfFire.position - bulletSpawnPoint.position);
-        Vector2 directionNormalize = direction.normalized;
+     if(isMyTurn)
+        {
+            Vector2 direction = (directionOfFire.position - bulletSpawnPoint.position);
+            Vector2 directionNormalize = direction.normalized;
+
+            RPC_BotFire(directionNormalize, PlayerId);
+        }
+        
+    }
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    void RPC_BotFire(Vector3 directionNormalize, int pId)
+    {
+        isMyTurn = false;
+        Debug.Log("Fire RpC");
+        
 
         GameObject bullet = Instantiate(bulletPrefab, bulletSpawnPoint.position, Quaternion.identity);
-        bullet.name=transform.name+"Bullet";
+        bullet.name = transform.name + "Bullet";
         Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
         bulletRb.velocity = directionNormalize * bulletSpeed;
-        BattleSystem.instance.NextTurn();
+        bullet.GetComponent<BotBulletScript>().Init( pId);
+        BattleSystem.instance.NextTurn(4);
     }
-
 
     void OnCollisionEnter2D(Collision2D collision)
     {
@@ -297,10 +315,15 @@ public class BotController : MonoBehaviour
             Debug.Log(collision.gameObject.name + " : " + transform.name + "Bullet");
 
             //Check player should be the iffernt from fire player.
-            if (PlayerId != collision.GetComponent<BulletScript>().PlayerId)
+            if (collision.GetComponent<BulletScript>() && PlayerId != collision.GetComponent<BulletScript>().PlayerId)
             {
                 Debug.Log("OtherPlayer Hit");
-                transform.GetComponent<Unit>().TakeDamage(8);
+                transform.GetComponent<Unit>().RPC_TakeDamage(8);
+            }
+            else if (collision.GetComponent<BotBulletScript>() && PlayerId != collision.GetComponent<BotBulletScript>().PlayerId)
+            {
+                Debug.Log("OtherBot Hit");
+                transform.GetComponent<Unit>().RPC_TakeDamage(8);
             }
 
         }

@@ -42,6 +42,7 @@ public class BattleHUD : MonoBehaviour
 			HpText.text = previousHp.ToString();
 			nameText.text = unitScript.unitName.ToString();
 			hpSlider.fillAmount = previousHp / 100f;
+			levelText.text = unitScript.unitLevel.ToString();
 		}
 		
 	}

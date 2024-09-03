@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 
 public class FusionConnection : FusionMonoBehaviour, INetworkRunnerCallbacks
 {
+    public NetworkObject CountDownPrefab;
     public NetworkRunner runnerIstance;
     public static FusionConnection instance;
     public NetworkObject LocalPlayer;
@@ -218,14 +219,23 @@ public class FusionConnection : FusionMonoBehaviour, INetworkRunnerCallbacks
          if(player==runnerIstance.LocalPlayer)
         {
             LobbyUI.instance.OpenWaitingPanel();
-            LobbyUI.instance.WaitingPanelUpdate(player.PlayerId);
+            LobbyUI.instance.WaitingPanelUpdate(runner.IsSharedModeMasterClient);
             myPlayer = player;
+            if(runner.IsSharedModeMasterClient)
+            {
+                runner.Spawn(CountDownPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+            }
         }
+        LobbyUI.instance.WaitingPanelPlayerEnter(runner.SessionInfo.PlayerCount+"/"+runner.SessionInfo.MaxPlayers);
     }
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
     {
-         
+        if(BotManager.instance)
+        {
+            BotManager.instance.OnPlayerLeft(player);
+        }
+        LobbyUI.instance.WaitingPanelPlayerEnter(runner.SessionInfo.PlayerCount + "/" + runner.SessionInfo.MaxPlayers);
     }
 
     public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress)
