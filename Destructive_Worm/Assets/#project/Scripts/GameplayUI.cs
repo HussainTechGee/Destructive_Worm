@@ -4,8 +4,8 @@ using UnityEngine;
 using TMPro;
 public class GameplayUI : MonoBehaviour
 {
-    public GameObject GameplayPlayerTurn, GameplayOtherTurn;
-    public TMP_Text PlayerTurnTimerTxt, PlayerTurnIdTxt, OtherTurnTimerText, OtherTurnIdText, playerTurnNameText,OtherTurnNameText;
+    public GameObject GameplayPlayerTurn, GameplayOtherTurn,LostPanel,EndPanel;
+    public TMP_Text PlayerTurnTimerTxt, PlayerTurnIdTxt, OtherTurnTimerText, OtherTurnIdText, playerTurnNameText,OtherTurnNameText,winnerNameText,LostPlayerPositionText;
     public int AttackTime;
 
     Coroutine _TimerCoroutine;
@@ -63,8 +63,24 @@ public class GameplayUI : MonoBehaviour
         if (totalTime < 0 && FusionConnection.instance.runnerIstance.IsSharedModeMasterClient)
         {
             Debug.Log("Next Turn on Master");
-          //  BattleSystem.instance.LocalPlayer.GetComponent<PlayerController>().RPC_NextTurn();
+            BattleSystem.instance.LocalPlayer.GetComponent<PlayerController>().RPC_NextTurn();
         }
+    }
+
+    public void LostPanelActive(int pos)
+    {
+        LostPlayerPositionText.text = pos.ToString();
+        LostPanel.SetActive(true);
+    }
+    public void GameEndActive(string name,bool isMine)
+    {
+        winnerNameText.text = name;
+        LostPanel.SetActive(false);
+        EndPanel.SetActive(true);
+    }
+    public void SpectateClick()
+    {
+        LostPanel.SetActive(false);
     }
     public void DisconectClick()
     {

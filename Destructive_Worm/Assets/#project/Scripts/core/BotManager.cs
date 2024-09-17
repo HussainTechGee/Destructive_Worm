@@ -64,10 +64,13 @@ public class BotManager : NetworkBehaviour
         }
     }
     public void BotTurn(GameObject botObj,GameObject target)
-    {
-        targetPlayer = target.transform;
-        botObj.GetComponent<BotController>().isMyTurn = true;
-        StartCoroutine(botObj.GetComponent<BotController>().Move());
+    {if(botObj && target)
+        {
+            targetPlayer = target.transform;
+            botObj.GetComponent<BotController>().isMyTurn = true;
+            StartCoroutine(botObj.GetComponent<BotController>().Move());
+        }
+        
     }
     public void OnPlayerLeft(PlayerRef player)
     {
@@ -75,6 +78,7 @@ public class BotManager : NetworkBehaviour
         if (player == Object.StateAuthority)
         {
             AssignNewBotHost();
+            BattleSystem.instance.AfterHit();
         }
     }
     private void AssignNewBotHost()

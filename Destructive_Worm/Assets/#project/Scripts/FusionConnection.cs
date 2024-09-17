@@ -12,6 +12,7 @@ public class FusionConnection : FusionMonoBehaviour, INetworkRunnerCallbacks
     public NetworkRunner runnerIstance;
     public static FusionConnection instance;
     public NetworkObject LocalPlayer;
+    CountDownTimer countDownScript;
     public Dictionary<string, GameObject> sessionListUiDictionary = new Dictionary<string, GameObject>();
     [HideInInspector]
     public PlayerRef myPlayer;
@@ -216,7 +217,7 @@ public class FusionConnection : FusionMonoBehaviour, INetworkRunnerCallbacks
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
         //When Local Player jopin the Session
-         if(player==runnerIstance.LocalPlayer)
+        if(player==runner.LocalPlayer)
         {
             LobbyUI.instance.OpenWaitingPanel();
             LobbyUI.instance.WaitingPanelUpdate(runner.IsSharedModeMasterClient);
@@ -225,6 +226,10 @@ public class FusionConnection : FusionMonoBehaviour, INetworkRunnerCallbacks
             {
                 runner.Spawn(CountDownPrefab, new Vector3(0, 0, 0), Quaternion.identity);
             }
+        }
+         else
+        {
+            ToastScript.instance.ToastShow("Other Player Join the Session!");
         }
         LobbyUI.instance.WaitingPanelPlayerEnter(runner.SessionInfo.PlayerCount+"/"+runner.SessionInfo.MaxPlayers);
     }
@@ -235,6 +240,12 @@ public class FusionConnection : FusionMonoBehaviour, INetworkRunnerCallbacks
         {
             BotManager.instance.OnPlayerLeft(player);
         }
+        countDownScript = FindObjectOfType<CountDownTimer>();
+        if (countDownScript)
+        {
+            countDownScript.OnPlayerLeft(player);
+        }
+        ToastScript.instance.ToastShow("Player Leave the Session!");
         LobbyUI.instance.WaitingPanelPlayerEnter(runner.SessionInfo.PlayerCount + "/" + runner.SessionInfo.MaxPlayers);
     }
 

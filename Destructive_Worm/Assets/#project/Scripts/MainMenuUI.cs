@@ -2,10 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 public class MainMenuUI : MonoBehaviour
 {
+    public Button InputBtn;
     public TMP_InputField nameInpuit;
     bool isClicked;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -14,6 +17,12 @@ public class MainMenuUI : MonoBehaviour
         {
             nameInpuit.text = pName;
             GameManager.instance.PlayerName = pName;
+            InputBtn.gameObject.SetActive(false);
+        }
+        else
+        {
+            InputBtn.interactable = false;
+            InputBtn.gameObject.SetActive(true);
         }
     }
     public void NameUpdate()
@@ -21,6 +30,8 @@ public class MainMenuUI : MonoBehaviour
         string name = nameInpuit.text;
         PlayerPrefs.SetString("playerName", name);
         GameManager.instance.PlayerName= name;
+        ToastScript.instance.ToastShow("Name Updated!");
+        InputBtn.gameObject.SetActive(false);
     }
     public void StartBtnClick()
     {

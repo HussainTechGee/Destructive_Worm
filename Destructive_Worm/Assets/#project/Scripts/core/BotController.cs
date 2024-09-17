@@ -3,6 +3,7 @@ using System.ComponentModel;
 using TMPro;
 using UnityEngine;
 using Fusion;
+using DG.Tweening;
 using static UnityEngine.GraphicsBuffer;
 public class BotController : NetworkBehaviour
 {
@@ -13,14 +14,14 @@ public class BotController : NetworkBehaviour
     public float bulletSpeed = 10f;
     public float gravity = 9.8f;
     public Transform gunTransform;
-    public ShooterFinal ShooterScript;
+    public ParticleSystem HitParticle;
     private Rigidbody2D rb;
     private bool isGrounded;
     public bool isMyTurn=false;
     [HideInInspector] public bool canMove;
     public AccuracyLevel accuracyLevel;
+    SpriteRenderer spriteRenderer;
     float deviation;// how much anngle of gun will deviate
-  //  int target = 0;// opponet to shoot
     float horizontalDistance, verticalDistance;
     [Networked, OnChangedRender(nameof(IdChanged))]
     public int PlayerId { get; set; } = 0;
@@ -29,6 +30,7 @@ public class BotController : NetworkBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
     }
     void IdChanged()
     {
@@ -182,7 +184,7 @@ public class BotController : NetworkBehaviour
     {
         // Set the rotation of the gun based on the launch angle
         gunTransform.rotation = Quaternion.Euler(0, 0, launchAngle);
-        Debug.Log("Angle: "+launchAngle);
+      //  Debug.Log("Angle: "+launchAngle);
 
         // Flip the gun if the angle is greater than 90 degrees or less than -90 degrees
         Vector3 localScale = gunTransform.localScale;
@@ -269,8 +271,11 @@ public class BotController : NetworkBehaviour
         {
             Vector2 direction = (directionOfFire.position - bulletSpawnPoint.position);
             Vector2 directionNormalize = direction.normalized;
-
-            RPC_BotFire(directionNormalize, PlayerId);
+            if(Object.HasStateAuthority)
+            {
+                RPC_BotFire(directionNormalize, PlayerId);
+            }
+            
         }
         
     }
@@ -285,7 +290,7 @@ public class BotController : NetworkBehaviour
         bullet.name = transform.name + "Bullet";
         Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
         bulletRb.velocity = directionNormalize * bulletSpeed;
-        bullet.GetComponent<BotBulletScript>().Init( pId);
+        bullet.GetComponent<BulletScript>().Init( pId);
         BattleSystem.instance.NextTurn(4);
     }
 
@@ -317,13 +322,14 @@ public class BotController : NetworkBehaviour
             //Check player should be the iffernt from fire player.
             if (collision.GetComponent<BulletScript>() && PlayerId != collision.GetComponent<BulletScript>().PlayerId)
             {
+                TakeDamage();
                 Debug.Log("OtherPlayer Hit");
-                transform.GetComponent<Unit>().RPC_TakeDamage(8);
-            }
-            else if (collision.GetComponent<BotBulletScript>() && PlayerId != collision.GetComponent<BotBulletScript>().PlayerId)
-            {
-                Debug.Log("OtherBot Hit");
-                transform.GetComponent<Unit>().RPC_TakeDamage(8);
+                Destroy(collision.gameObject);
+                if(Object.HasStateAuthority)
+                {
+                    transform.GetComponent<Unit>().TakeDamage(8, PlayerId);
+                }
+                
             }
 
         }
@@ -334,5 +340,22 @@ public class BotController : NetworkBehaviour
         {
             isGrounded = false;
         }
+    }
+    void TakeDamage()
+    {
+        HitParticle.Play();
+        spriteRenderer.color = Color.red;
+        float punchScaleAmount = 1.2f;
+        float punchDuration = 0.2f;
+        Vector3 originalScale = transform.localScale;
+        // Punch Scale Effect
+        transform.DOScale(originalScale * punchScaleAmount, punchDuration)
+                  .SetEase(Ease.InOutBounce)
+                 .OnComplete(() =>
+                 {
+                     transform.DOScale(originalScale, punchDuration).SetEase(Ease.InBounce);
+                     spriteRenderer.color = Color.white;
+                 });
+
     }
 }

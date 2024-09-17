@@ -10,6 +10,7 @@ public class BattleSystem : MonoBehaviour
 {
 
 	public GameObject playerPrefab;
+	
 
 	public GameObject LocalPlayer;
 	public Transform[] playerBattleStation;
@@ -18,9 +19,9 @@ public class BattleSystem : MonoBehaviour
 	public bool isCameraFollow;
 
 	public static BattleSystem instance;
-
+	int currentPlayerCount;
 	public BattleState state;
-	public int currentTurnId;
+	public int currentTurnId,currentWeaponIndex;
 	List<playerData> AllPlayers; 
     private void Awake()
     {
@@ -61,6 +62,7 @@ public class BattleSystem : MonoBehaviour
 			isCameraFollow = true;
 			pData.pObject.GetComponent<PlayerController>().isFired = false;
 			GameplayUI.instance.PlayerTurnOn(pData.pName,pData.playerId);
+			ToastScript.instance.ToastShow("Your Turn!");
 		}
 		else
 		{
@@ -73,7 +75,6 @@ public class BattleSystem : MonoBehaviour
 			state = BattleState.OTHERTURN;
 			isCameraFollow = false;
 			GameplayUI.instance.OtherTurnOn(pData.pName,pData.playerId);
-
 
 		}
 	}
@@ -166,6 +167,30 @@ public class BattleSystem : MonoBehaviour
 			pData.pName = bObj.GetComponent<Unit>().unitName.ToString();
 			AllPlayers.Add(pData);
 		}
+		currentPlayerCount = AllPlayers.Count;
+		
+	}
+
+	public void AfterHit()
+    {
+		GetAllPlayer();
+		if (currentPlayerCount == 1)
+		{
+			bool isMine;
+			if (AllPlayers[0].isBot)
+			{
+				isMine = false;
+			}
+			else
+			{
+				isMine = AllPlayers[0].pObject.GetComponent<PlayerController>().isMine();
+			}
+			EndBattle(isMine);
+		}
+		else
+		{
+			TurnSetup();
+        }
 	}
 	int GetRandomExcluding()
 	{
@@ -181,15 +206,66 @@ public class BattleSystem : MonoBehaviour
 
 		return randomValue;
 	}
-	void EndBattle()
+	public void PlayerDead(int playerId, bool isMine)
 	{
-		if(state == BattleState.WON)
+		currentPlayerCount = AllPlayers.Count;
+		for (int i=0;i<AllPlayers.Count;i++)
 		{
-		//	dialogueText.text = "You won the battle!";
-		} else if (state == BattleState.LOST)
-		{
-			//dialogueText.text = "You were defeated.";
+			if (playerId == AllPlayers[i].playerId)
+			{
+				Debug.Log("Player Death Id: " + playerId);
+				//Check is it bot
+				if(AllPlayers[i].isBot)
+                {
+					Debug.Log("Bot Dead!");
+					ToastScript.instance.ToastShow(AllPlayers[i].pName + " is Dead!");
+					AllPlayers[i].pObject.SetActive(false);
+					AllPlayers.RemoveAt(i);
+					currentPlayerCount--;
+					if(currentPlayerCount==1)
+                    {
+						EndBattle(false);
+
+					}
+
+				}
+				else
+                {
+					if (isMine)
+					{
+						state = BattleState.LOST;
+						isCameraFollow = false;
+						GameplayUI.instance.LostPanelActive(currentPlayerCount);
+					}
+                   else 
+					{
+						ToastScript.instance.ToastShow(AllPlayers[i].pName + " is Dead!");
+					}
+					AllPlayers[i].pObject.SetActive(false);
+					AllPlayers.RemoveAt(i);
+					currentPlayerCount--;
+					Debug.Log("Player Dead!");
+					//All Other Player died;
+					if (currentPlayerCount==1)
+                    {
+						EndBattle(isMine);
+                    }
+				}
+			}
 		}
+	}
+ 	public void EndBattle(bool isMine)
+	{
+		if(AllPlayers.Count==1)
+        {
+			Debug.Log("End Battle");
+			GameplayUI.instance.GameEndActive(AllPlayers[0].pName,isMine);
+			AllPlayers.RemoveAt(0);
+        }
+		else
+        {
+			Debug.Log("Something is wrong");
+        }
 	}
 
 
@@ -205,7 +281,17 @@ public class BattleSystem : MonoBehaviour
 	//	state = BattleState.ENEMYTURN;
 	//	StartCoroutine(EnemyTurn());
 	//}
+	public void WeaponChange()
+    {
+		if(LocalPlayer)
+        {
+			if(LocalPlayer.GetComponent<PlayerController>())
+            {
+				LocalPlayer.GetComponent<PlayerController>().weaponSpriteUpdate();
 
+			}
+        }
+    }
 	public void SkipEnemyTurn()
 	{
 		state = BattleState.PLAYERTURN;

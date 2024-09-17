@@ -21,6 +21,10 @@ public class Unit : NetworkBehaviour
 	void HealthChanged()
     {
 		Debug.Log("Hp Changed!"+currentHP);
+		//if(currentHP<10)
+  //      {
+		//	BattleSystem.instance.AfterHit();
+		//}
 		//playerHuDScript.SetHP(currentHP);
 		//change
 
@@ -42,31 +46,32 @@ public class Unit : NetworkBehaviour
 		Debug.Log("Hp name!" + unitName);
 		//playerHuDScript.SetName(unitName);
 	}
-	[Rpc (RpcSources.StateAuthority,RpcTargets.All)]
-	public void RPC_TakeDamage(float dmg)
+	[Rpc (RpcSources.All,RpcTargets.All)]
+	public void RPC_TakeDamage( int id)
 	{
-
-		currentHP -= dmg;
-
-		if (currentHP <= 0)
-		{//	return true;
+		Debug.Log("Dead RPC");
+		if (Object.HasStateAuthority)
+		{
+			BattleSystem.instance.PlayerDead(id, true);
 		}
 		else
-		{   //return false;
+		{
+			BattleSystem.instance.PlayerDead(id, false);
 		}
+
 	}
 
-	public void TakeDamage(float dmg)
+	public void TakeDamage(float dmg, int id)
 	{
-
+		
 		currentHP -= dmg;
+		
+		if(currentHP<=0)
+        {
+			RPC_TakeDamage(id);
+		}
+		
 
-		if (currentHP <= 0)
-		{//	return true;
-		}
-		else
-		{   //return false;
-		}
 	}
 	public void Heal(int amount)
 	{

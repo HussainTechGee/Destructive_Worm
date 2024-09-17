@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.Events;
 using CW.Common;
-
+using System.Collections;
 namespace Destructible2D
 {
 	/// <summary>This component spawns a prefab at the impact point when an object hits the current object.</summary>
@@ -18,25 +18,37 @@ namespace Destructible2D
 		}
 
 		/// <summary>The collision layers you want to listen to.</summary>
-		public LayerMask Mask { set { mask = value; } get { return mask; } } [SerializeField] private LayerMask mask = -1;
+		public LayerMask Mask { set { mask = value; } get { return mask; } }
+		[SerializeField] private LayerMask mask = -1;
 
 		/// <summary>The impact force required.</summary>
-		public float Threshold { set { threshold = value; } get { return threshold; } } [SerializeField] private float threshold = 1.0f;
+		public float Threshold { set { threshold = value; } get { return threshold; } }
+		[SerializeField] private float threshold = 1.0f;
 
 		/// <summary>This allows you to control the minimum amount of time between fissure creation in seconds.</summary>
-		public float Delay { set { delay = value; } get { return delay; } } [SerializeField] private float delay = 1.0f;
+		public float Delay { set { delay = value; } get { return delay; } }
+		[SerializeField] private float delay = 1.0f;
 
 		/// <summary>If you want a prefab to spawn at the impact point, set it here.</summary>
-		public GameObject Prefab { set { prefab = value; } get { return prefab; } } [SerializeField] private GameObject prefab;
+		public GameObject Prefab { set { prefab = value; } get { return prefab; } }
+		[SerializeField] private GameObject prefab;
 
 		/// <summary>This allows you to move the start point of the fissure back a bit.</summary>
-		public float Offset { set { offset = value; } get { return offset; } } [SerializeField] private float offset = 0.1f;
+		public float Offset { set { offset = value; } get { return offset; } }
+		[SerializeField] private float offset = 0.1f;
+
+
+		// delay before damage
+		public float DamageDelay { set { damageDelay = value; } get { return damageDelay; } }
+		[SerializeField] private float damageDelay = 0.1f;
 
 		/// <summary>How should the spawned prefab be rotated?</summary>
-		public RotationType RotateTo { set { rotateTo = value; } get { return rotateTo; } } [SerializeField] private RotationType rotateTo;
+		public RotationType RotateTo { set { rotateTo = value; } get { return rotateTo; } }
+		[SerializeField] private RotationType rotateTo;
 
 		/// <summary>This gets called when the prefab was spawned.</summary>
-		public UnityEvent OnImpact { get { if (onImpact == null) onImpact = new UnityEvent(); return onImpact; } } [SerializeField] private UnityEvent onImpact;
+		public UnityEvent OnImpact { get { if (onImpact == null) onImpact = new UnityEvent(); return onImpact; } }
+		[SerializeField] private UnityEvent onImpact;
 
 		[System.NonSerialized]
 		private D2dCollisionHandler cachedCollisionHandler;
@@ -67,63 +79,70 @@ namespace Destructible2D
 			{
 				if (CwHelper.IndexInMask(collision.gameObject.layer, mask) == true)
 				{
-					var contacts = collision.contacts;
+					StartCoroutine(CollisionCoroutine(collision));
+				}
+			}
 
-					for (var i = contacts.Length - 1; i >= 0; i--)
+		}
+		IEnumerator CollisionCoroutine(Collision2D collision)
+		{
+			yield return new WaitForSeconds(damageDelay);
+
+			var contacts = collision.contacts;
+
+			for (var i = contacts.Length - 1; i >= 0; i--)
+			{
+				var contact = contacts[i];
+				var normal = collision.relativeVelocity;
+				var force = normal.magnitude;
+
+				if (force >= threshold)
+				{
+					switch (rotateTo)
 					{
-						var contact = contacts[i];
-						var normal  = collision.relativeVelocity;
-						var force   = normal.magnitude;
-
-						if (force >= threshold)
-						{
-							switch (rotateTo)
+						case RotationType.RandomDirection:
 							{
-								case RotationType.RandomDirection:
-								{
-									var angle = Random.Range(-Mathf.PI, Mathf.PI);
+								var angle = Random.Range(-Mathf.PI, Mathf.PI);
 
-									normal.x = Mathf.Sin(angle);
-									normal.y = Mathf.Cos(angle);
-								}
-								break;
-
-								case RotationType.ImpactDirection:
-								{
-									normal /= force;
-								}
-								break;
-
-								case RotationType.SurfaceNormal:
-								{
-									normal = contact.normal;
-								}
-								break;
+								normal.x = Mathf.Sin(angle);
+								normal.y = Mathf.Cos(angle);
 							}
+							break;
 
-							var point = contact.point - contact.normal * offset;
-
-							cooldown = delay;
-
-							Instantiate(prefab, point, Quaternion.identity).SetActive(true);
-
-							if (onImpact != null)
+						case RotationType.ImpactDirection:
 							{
-								onImpact.Invoke();
+								normal /= force;
 							}
+							break;
 
-							if (delay > 0.0f)
+						case RotationType.SurfaceNormal:
 							{
-								break;
+								normal = contact.normal;
 							}
-						}
+							break;
+					}
+
+
+					cooldown = delay;
+					var point = contact.point - contact.normal * offset;
+
+					Instantiate(prefab, point, Quaternion.identity).SetActive(true);
+					Debug.Log("Create");
+
+					if (onImpact != null)
+					{
+						Debug.Log("Impect");
+						onImpact.Invoke();
+					}
+					if (delay > 0.0f)
+					{
+						break;
 					}
 				}
 			}
 		}
 	}
 }
-
 #if UNITY_EDITOR
 namespace Destructible2D.Inspector
 {
@@ -150,6 +169,7 @@ namespace Destructible2D.Inspector
 				Draw("prefab", "If you want a prefab to spawn at the impact point, set it here.");
 			EndError();
 			Draw("offset", "This allows you to move the start point of the fissure back a bit.");
+			Draw("damageDelay", "This allows you to delay between collision aqnd impact create.");
 			Draw("rotateTo", "How should the spawned prefab be rotated?");
 
 			Separator();

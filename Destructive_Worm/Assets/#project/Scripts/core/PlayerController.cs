@@ -1,12 +1,17 @@
 using System.Collections;
 using UnityEngine;
 using Fusion;
+using DG.Tweening;
+using UnityEngine.EventSystems;
+
 public class PlayerController : NetworkBehaviour
 {
     public float moveSpeed = 5f;
     public float jumpForce = 5f;
     public Transform bulletSpawnPoint,bulletDirection;
-    public GameObject bulletPrefab;
+    public ParticleSystem HitParticle;
+    public GameObject[] bulletPrefabList;
+    public Sprite[] weaponSpritesList;
     public float bulletSpeed = 10f;
     public float firingAngle = 45.0f;
     public float gravity = 9.8f;
@@ -14,15 +19,19 @@ public class PlayerController : NetworkBehaviour
     public Transform gunTransform;
    // public ShooterFinal ShooterScript;
     private Rigidbody2D rb;
+    SpriteRenderer spriteRenderer;
     private bool isGrounded;
     public bool isPlayer;
     public bool isFired;
+    bool isMouseClicked;
     float deviation;// how much anngle of gun will deviate
     [Networked, OnChangedRender(nameof(IdChanged))]
     public int PlayerId { get; set; } = 0;
 
     void Start()
     {
+        isMouseClicked = false;
+        spriteRenderer = GetComponent<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
     }
 
@@ -30,18 +39,60 @@ public class PlayerController : NetworkBehaviour
     {
         Debug.Log("Id Update");
     }
+    void Update()
+    {
+        if (!HasInputAuthority)
+        {
+            return;
+        }
+        if (BattleSystem.instance.state != BattleState.PLAYERTURN)
+        {
+            return;
+        }
+        if (MouseOverUI())
+        {
+            return;
+        }
+        // Capture mouse input in Update
+        if (Input.GetMouseButtonDown(0))
+        {
+            isMouseClicked = true;
+        }
+    }
+    private bool MouseOverUI()
+    {
+        return EventSystem.current.IsPointerOverGameObject();
+    }
+    public void weaponSpriteUpdate()
+    {
+        if(HasInputAuthority)
+        {
+            RPC_weaponUpdate(BattleSystem.instance.currentWeaponIndex);
+        }
+    }
+    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    void RPC_weaponUpdate(int index)
+    {
+        gunTransform.GetComponent<SpriteRenderer>().sprite = weaponSpritesList[index];
+        ToastScript.instance.ToastShow("Weapon Update!");
+    }
     public override void FixedUpdateNetwork()
     {
         
         if(!HasInputAuthority)
         {
+            Debug.Log("Not Authority");
             return;
         }
         //if(!isPlayer)
         //{
         //    return;
         //}
-        if(BattleSystem.instance.state!=BattleState.PLAYERTURN)
+        if (MouseOverUI())
+        {
+            return;
+        }
+        if (BattleSystem.instance.state!=BattleState.PLAYERTURN)
         {
             return;
         }
@@ -49,8 +100,9 @@ public class PlayerController : NetworkBehaviour
         Move();
         Jump();
         Aim();
-        if (Input.GetMouseButtonDown(0))
+        if (isMouseClicked)
         {
+            isMouseClicked = false;
             Fire();
         }
     }
@@ -110,11 +162,11 @@ public class PlayerController : NetworkBehaviour
     {
         // Set the rotation of the gun based on the launch angle
         gunTransform.rotation = Quaternion.Euler(0, 0, launchAngle);
-        Debug.Log("Angle: " + launchAngle);
+        
 
         // Flip the gun if the angle is greater than 90 degrees or less than -90 degrees
         Vector3 localScale = gunTransform.localScale;
-        if (launchAngle > 90 && launchAngle < 270)
+        if (launchAngle > 90 || launchAngle < -90)
         {
             localScale.y = -1.3f;
         }
@@ -157,7 +209,7 @@ public class PlayerController : NetworkBehaviour
             lowAngleDeg = lowAngleDeg - 180;
             highAngleDeg = highAngleDeg - 180;
         }
-        float chosenAngle = highAngleDeg; // You can choose lowAngleDeg or highAngleDeg based on your preference
+        float chosenAngle = lowAngleDeg; // You can choose lowAngleDeg or highAngleDeg based on your preference
        
 
         return chosenAngle;
@@ -165,12 +217,13 @@ public class PlayerController : NetworkBehaviour
  
     void Fire()
     {
-        if(!isFired)
+       if(!isFired)
         {
-            //isFired = true;
+            Debug.Log("Fired");
+            isFired = true;
             Vector2 direction = (bulletDirection.position - bulletSpawnPoint.position);
             Vector2 directionNormalize = direction.normalized;
-            RPC_Fire(directionNormalize, PlayerId);
+            RPC_Fire(directionNormalize, PlayerId,BattleSystem.instance.currentWeaponIndex);
         }
        
         
@@ -178,31 +231,48 @@ public class PlayerController : NetworkBehaviour
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    void RPC_Fire(Vector2 directionNormalize, int pId)
+    void RPC_Fire(Vector2 directionNormalize, int pId,int index)
     {
          Debug.Log("Fire RpC");
+        
+        //Check if wepon is Ak47
+        if(index==3)
+        {
+            StartCoroutine(Ak47Firing(directionNormalize, pId, index));
+        }
+        //Any Other weaopn
+        else
+        {
+            GameObject bullet = Instantiate(bulletPrefabList[BattleSystem.instance.currentWeaponIndex], bulletSpawnPoint.position, Quaternion.identity);
+            bullet.name = transform.name + "Bullet";
+            Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
+            bulletRb.velocity = directionNormalize * bulletSpeed;
+            bullet.GetComponent<BulletScript>().Init(pId);
+        }
+       BattleSystem.instance.NextTurn(4);
+    }
 
-
-        GameObject bullet = Instantiate(bulletPrefab, bulletSpawnPoint.position, Quaternion.identity);
-        bullet.name = transform.name + "Bullet";
-        Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
-        bulletRb.velocity = directionNormalize * bulletSpeed;
-        bullet.GetComponent<BulletScript>().Init(pId);
-
-        //GameObject bulletObj = Instantiate(bulletPrefab, bulletSpawnPoint.position, Quaternion.identity);
-        //Rigidbody2D bulletRb = bulletObj.GetComponent<Rigidbody2D>();
-        //// Calculate the launch direction based on the angle
-        //Vector2 launchDirection = new Vector2(Mathf.Cos(launchAngle * Mathf.Deg2Rad), Mathf.Sin(launchAngle * Mathf.Deg2Rad));
-
-        //// Apply the velocity to the bullet
-        //bulletRb.velocity = launchDirection * bulletSpeed;
-        //bulletObj.GetComponent<BulletScript>().Init( pId);
-        //  BattleSystem.instance.NextTurn(4);
+    IEnumerator Ak47Firing(Vector2 directionNormalize, int pId, int index)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            GameObject bullet = Instantiate(bulletPrefabList[BattleSystem.instance.currentWeaponIndex], bulletSpawnPoint.position, Quaternion.identity);
+            bullet.name = transform.name + "Bullet";
+            Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
+            bulletRb.velocity = directionNormalize * bulletSpeed;
+            bullet.GetComponent<BulletScript>().Init(pId);
+            yield return new WaitForSeconds(.5f);
+        }
     }
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_NextTurn()
     {
         BattleSystem.instance.NextTurn(.5f);
+    }
+
+    public bool isMine()
+    {
+        return Object.HasStateAuthority;
     }
     void OnCollisionEnter2D(Collision2D collision)
     {
@@ -223,12 +293,14 @@ public class PlayerController : NetworkBehaviour
             if (collision.GetComponent<BulletScript>() && PlayerId!=collision.GetComponent<BulletScript>().PlayerId)
             {
                 Debug.Log("OtherPlayer Hit");
-                transform.GetComponent<Unit>().RPC_TakeDamage(8);
-            }
-           else if (collision.GetComponent<BotBulletScript>() && PlayerId != collision.GetComponent<BotBulletScript>().PlayerId)
-            {
-                Debug.Log("OtherBot Hit");
-                transform.GetComponent<Unit>().RPC_TakeDamage(8);
+                TakeDamage();
+                Destroy(collision.gameObject);
+               
+                if (Object.HasStateAuthority)
+                {
+                    AudioManager.instance.Play("hit");
+                    transform.GetComponent<Unit>().TakeDamage(8, PlayerId);
+                }
             }
 
         }
@@ -240,5 +312,23 @@ public class PlayerController : NetworkBehaviour
         {
             isGrounded = false;
         }
+    }
+
+    void TakeDamage()
+    {
+        HitParticle.Play();
+        spriteRenderer.color = Color.red;
+        float punchScaleAmount = 1.2f;
+        float punchDuration = 0.2f;
+        Vector3 originalScale = transform.localScale;
+        // Punch Scale Effect
+        transform.DOScale(originalScale * punchScaleAmount, punchDuration)
+                  .SetEase(Ease.InOutBounce)
+                 .OnComplete(() =>
+                 {
+                     transform.DOScale(originalScale, punchDuration).SetEase(Ease.InBounce);
+                     spriteRenderer.color = Color.white;
+                 });
+   
     }
 }
